@@ -26,7 +26,7 @@ enum REGISTER_ADDRESSES
   	SETUP_RETR = 0x04,
   	RF_CH      = 0x05,
   	RF_SETUP   = 0x06,
-  	STATUS     = 0x07,
+  	STATUS     = 0x07,	
   	OBSERVE_TX = 0x08,
   	RPD        = 0x09,
   	RX_ADDR_P0 = 0x0A,
@@ -55,7 +55,7 @@ enum REGISTER_RESET_VALS
   	SETUP_RETR_RESET_VAL = 0x03,
   	RF_CH_RESET_VAL      = 0x02,
   	RF_SETUP_RESET_VAL   = 0x0E,
-  	STATUS_RESET_VAL     = 0x0E,
+  	STATUS_RESET_VAL     = 0x7E, //0b01111110, must write 1s to clear TX_DS, RX_DR and MAX_RT bits
   	RPD_RESET_VAL        = 0x00,
   	RX_ADDR_P0_RESET_VAL = 0xE7E7E7E7E7,
   	RX_ADDR_P1_RESET_VAL = 0xC2C2C2C2C2,
@@ -165,8 +165,8 @@ public:
 	void SetModeReceive();
 	void writePayload(uint8_t* data, int size);
 	void readPayload(uint8_t* data, int size);
-	bool isTxFifoFull();
-	bool rxAvailable();
+	bool txFull();
+	bool rxDataReady();
 
 	void softReset();
 	void printPrettyConfig();

@@ -79,14 +79,14 @@ void NRF24_Driver_Base::readPayload(uint8_t* data, int size)
 }
 
 // Checks if the TX FIFO is full (Stores up to 3 packets)
-bool NRF24_Driver_Base::isTxFifoFull()
+bool NRF24_Driver_Base::txFull()
 {
     uint8_t status = m_ReadRegister(STATUS);
     if (bitRead(status, STATUS_TX_FULL)) return true;
     return false;
 }
 
-bool NRF24_Driver_Base::rxAvailable()
+bool NRF24_Driver_Base::rxDataReady()
 {
     uint8_t status = m_ReadRegister(STATUS);
     bool dataReady = bitRead(status, STATUS_RX_DR);
@@ -95,15 +95,15 @@ bool NRF24_Driver_Base::rxAvailable()
 
 void NRF24_Driver_Base::softReset()
 {
-    m_WriteRegister(CONFIG, CONFIG_RESET_VAL);
-    m_WriteRegister(EN_AA, EN_AA_RESET_VAL);
-    m_WriteRegister(EN_RXADDR, EN_RXADDR_RESET_VAL);
-    m_WriteRegister(SETUP_AW, SETUP_AW_RESET_VAL);
+    m_WriteRegister(CONFIG,     CONFIG_RESET_VAL);
+    m_WriteRegister(EN_AA,      EN_AA_RESET_VAL);
+    m_WriteRegister(EN_RXADDR,  EN_RXADDR_RESET_VAL);
+    m_WriteRegister(SETUP_AW,   SETUP_AW_RESET_VAL);
     m_WriteRegister(SETUP_RETR, SETUP_RETR_RESET_VAL);
-    m_WriteRegister(RF_CH, RF_CH_RESET_VAL);
-    m_WriteRegister(RF_SETUP, RF_SETUP_RESET_VAL);
-    m_WriteRegister(STATUS, STATUS_RESET_VAL);
-    m_WriteRegister(RPD, RPD_RESET_VAL);
+    m_WriteRegister(RF_CH,      RF_CH_RESET_VAL);
+    m_WriteRegister(RF_SETUP,   RF_SETUP_RESET_VAL);
+    m_WriteRegister(STATUS,     STATUS_RESET_VAL);
+    m_WriteRegister(RPD,        RPD_RESET_VAL);
 
     // TODO: RESET RX_ADDR_P0 - RX_ADDR_P5 & TX_ADDR
 
