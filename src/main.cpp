@@ -3,9 +3,9 @@
 
 #include "NRF24.hpp"
 #include "NRF24_Arduino.hpp"
+#include "NRF24_Utility.hpp"
 
 #define NRF24_TX
-
 #define NRF24_CE_PIN 7
 #define NRF24_CSN_PIN 8
 NRF24_Arduino radio(NRF24_CSN_PIN, NRF24_CE_PIN);
@@ -33,8 +33,8 @@ void setup()
 	radio.m_WriteRegister(EN_AA, 0x00); // Disable auto ack
 
 	uint8_t address[] = {0xEE, 0xDD, 0xCC, 0xBB, 0xAA};
-	//radio.m_WriteMultiByteRegister(RX_ADDR_P0, address, 5); // Set RX address for pipe 0
-	//radio.m_WriteMultiByteRegister(TX_ADDR, address, 5); // Set TX address, must be the same as RX address for pipe 0
+	radio.m_WriteMultiByteRegister(RX_ADDR_P0, address, 5); // Set RX address for pipe 0
+	radio.m_WriteMultiByteRegister(TX_ADDR, address, 5); // Set TX address, must be the same as RX address for pipe 0
 
 	radio.printPrettyRxAdresses();
 }
@@ -53,16 +53,16 @@ void loop()
 	//radio.txTransmit();
 	
 	// Transmit continously for 4ms, then rest for a few micros;
-	//unsigned long startTime = micros();
-	//radio.setCE(1); // continues transmission
-	//while (micros() - startTime < 4e3)
-	//{
-	//	testPacket test;
-	//	test.id = counter++;
-	//	strcpy(test.data, "Test Data");
-	//	radio.writePayload((uint8_t*)&test, sizeof(test));
-	//}
-	//radio.setCE(0); // Stop transmission
+	unsigned long startTime = micros();
+	radio.setCE(1); // continues transmission
+	while (micros() - startTime < 4e3)
+	{
+		testPacket test;
+		test.id = counter++;
+		strcpy(test.data, "Test Data");
+		radio.writePayload((uint8_t*)&test, sizeof(test));
+	}
+	radio.setCE(0); // Stop transmission
 	//delayMicroseconds(100); // Rest for a few micros
 }
 #endif

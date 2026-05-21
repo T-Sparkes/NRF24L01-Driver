@@ -1,4 +1,5 @@
 #include "NRF24.hpp"
+#include "NRF24_Utility.hpp"
 
 NRF24_Driver_Base::NRF24_Driver_Base(/* args */)
 {
