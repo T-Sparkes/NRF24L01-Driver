@@ -15,6 +15,8 @@ void NRF24_Driver_Base::init()
     setCE(0);
     setCSN(1);
     softReset();
+    flushRx();
+    flushTx();
 }
 
 void NRF24_Driver_Base::powerOn()
@@ -86,11 +88,65 @@ bool NRF24_Driver_Base::txFull()
     return false;
 }
 
+bool NRF24_Driver_Base::txEmpty()
+{
+    uint8_t fifo_status = m_ReadRegister(FIFO_STATUS);
+    if (bitRead(fifo_status, FIFO_STATUS_TX_EMPTY)) return true; 
+    return false;
+}
+
 bool NRF24_Driver_Base::rxDataReady()
 {
     uint8_t status = m_ReadRegister(STATUS);
     bool dataReady = bitRead(status, STATUS_RX_DR);
     return dataReady;
+}
+
+bool NRF24_Driver_Base::txTransmit()
+{
+    // Send pending packets
+	setCE(1);
+	delayMicro(10);
+	setCE(0);
+
+	while (true)
+	{
+		uint8_t status = m_ReadRegister(STATUS);
+		if (bitRead(status, STATUS_MAX_RT))
+		{
+			m_WriteRegister(STATUS, (1UL << STATUS_MAX_RT)); // Clear MAX_RT bit
+			print("MAX RETRANSMIT REACHED\n");
+			return false;
+		}
+		else if (bitRead(status, STATUS_TX_DS))
+		{
+			m_WriteRegister(STATUS, (1UL << STATUS_TX_DS)); // Clear TX_DS bit
+			print("PACKET SENT\n");
+			return true;
+		}
+	}
+}
+
+void NRF24_Driver_Base::flushTx()
+{
+    SPI_BeginTransaction();
+    setCSN(0); // Active Low
+
+    SPI_Transfer(FLUSH_TX);
+
+    setCSN(1); 
+    SPI_EndTransaction();
+}
+
+void NRF24_Driver_Base::flushRx()
+{
+    SPI_BeginTransaction();
+    setCSN(0); // Active Low
+
+    SPI_Transfer(FLUSH_RX);
+
+    setCSN(1); 
+    SPI_EndTransaction();
 }
 
 void NRF24_Driver_Base::softReset()
@@ -132,6 +188,22 @@ uint8_t NRF24_Driver_Base::m_ReadRegister(uint8_t reg)
   	return data;
 }
 
+void NRF24_Driver_Base::m_ReadMultiByteRegister(uint8_t reg, uint8_t *bytes, int size)
+{
+    SPI_BeginTransaction();
+    setCSN(0); // Active Low
+
+    SPI_Transfer(R_REGISTER | reg);
+
+    for (int i = 0; i < size; i++)
+    {
+        bytes[i] = SPI_Transfer(0x00);
+    }
+
+    setCSN(1); 
+    SPI_EndTransaction();
+}
+
 // Writes a 8bit value to a register
 void NRF24_Driver_Base::m_WriteRegister(uint8_t reg, uint8_t value)
 {
@@ -140,6 +212,22 @@ void NRF24_Driver_Base::m_WriteRegister(uint8_t reg, uint8_t value)
 
     SPI_Transfer(W_REGISTER | reg);
     SPI_Transfer(value);
+
+    setCSN(1);
+    SPI_EndTransaction();
+}
+
+void NRF24_Driver_Base::m_WriteMultiByteRegister(uint8_t reg, uint8_t *bytes, int size)
+{
+    SPI_BeginTransaction();
+    setCSN(0); // Active Low
+
+    SPI_Transfer(W_REGISTER | reg);
+
+    for (int i = 0; i < size; i++)
+    {
+        SPI_Transfer(bytes[i]);
+    }
 
     setCSN(1);
     SPI_EndTransaction();
@@ -221,5 +309,59 @@ void NRF24_Driver_Base::printPrettyStatus()
     
 	print("TX_FULL: ");
   	print(bitRead(status, STATUS_TX_FULL));
+    print("\n");
+}
+
+void NRF24_Driver_Base::printPrettyRxAdresses()
+{
+    uint8_t rx_addr_p0[5];
+    uint8_t rx_addr_p1[5];
+    uint8_t rx_addr_p2;
+    uint8_t rx_addr_p3;
+    uint8_t rx_addr_p4;
+    uint8_t rx_addr_p5;
+
+    m_ReadMultiByteRegister(RX_ADDR_P0, rx_addr_p0, 5);
+    m_ReadMultiByteRegister(RX_ADDR_P1, rx_addr_p1, 5);
+    rx_addr_p2 = m_ReadRegister(RX_ADDR_P2);
+    rx_addr_p3 = m_ReadRegister(RX_ADDR_P3);
+    rx_addr_p4 = m_ReadRegister(RX_ADDR_P4);
+    rx_addr_p5 = m_ReadRegister(RX_ADDR_P5);
+
+    print("==== RX ADRESSES ====\n");
+    
+    print("P0: 0x");
+    
+    for (int i = 4; i >= 0; i--)
+        printHex(rx_addr_p0[i]);
+    print("\n");
+
+    print("P1: 0x");
+    for (int i = 4; i >= 0; i--)
+        printHex(rx_addr_p1[i]);
+    print("\n");
+
+    print("P2: 0x");
+    for (int i = 4; i >= 1; i--)
+        printHex(rx_addr_p1[i]);
+    printHex(rx_addr_p2);
+    print("\n");
+
+    print("P3: 0x");
+    for (int i = 4; i >= 1; i--)
+        printHex(rx_addr_p1[i]);
+    printHex(rx_addr_p3);
+    print("\n");
+
+    print("P4: 0x");
+    for (int i = 4; i >= 1; i--)
+        printHex(rx_addr_p1[i]);
+    printHex(rx_addr_p4);
+    print("\n");
+
+    print("P5: 0x");
+    for (int i = 4; i >= 1; i--)
+        printHex(rx_addr_p1[i]);
+    printHex(rx_addr_p5);
     print("\n");
 }

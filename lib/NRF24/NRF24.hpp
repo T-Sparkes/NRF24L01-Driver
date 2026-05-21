@@ -46,6 +46,7 @@ enum REGISTER_ADDRESSES
   	DYNPD       = 0x1C,
 };
 
+// Default to be written to restore reset values, soft reset (INCOMPLETE)
 enum REGISTER_RESET_VALS
 {
 	CONFIG_RESET_VAL     = 0x08,
@@ -70,7 +71,7 @@ enum REGISTER_RESET_VALS
   	RX_PW_P3_RESET_VAL   = 0x00,
   	RX_PW_P4_RESET_VAL   = 0x00,
   	RX_PW_P5_RESET_VAL   = 0x00,
-	DYNPD_RESET_VAL       = 0x00
+	DYNPD_RESET_VAL      = 0x00
 };
 
 enum CONFIG_BIT_POS
@@ -152,6 +153,15 @@ enum RPD_BIT_POS
   	RPD_RPD = 0x00
 };
 
+enum FIFO_STATUS_BIT_POS
+{
+	FIFO_STATUS_TX_REUSE  = 0x06,
+	FIFO_STATUS_FIFO_FULL = 0x05,
+	FIFO_STATUS_TX_EMPTY  = 0x04,
+	FIFO_STATUS_RX_FULL   = 0x01,
+	FIFO_STATUS_RX_EMPTY  = 0x00
+};
+
 class NRF24_Driver_Base
 {
 public:
@@ -166,11 +176,17 @@ public:
 	void writePayload(uint8_t* data, int size);
 	void readPayload(uint8_t* data, int size);
 	bool txFull();
+	bool txEmpty();
 	bool rxDataReady();
+	bool txTransmit();
+
+	void flushTx();
+	void flushRx();
 
 	void softReset();
 	void printPrettyConfig();
 	void printPrettyStatus();
+	void printPrettyRxAdresses();
 
 protected:
 	int CSN_PIN;
@@ -186,10 +202,14 @@ protected:
 	virtual void delayMicro(unsigned int microSeconds) = 0;
 	virtual void print(const char* chars) = 0;
 	virtual void print(int val) = 0;
+	virtual void printHex(int val) = 0; 
 	
 public: // Will be private
 	uint8_t m_ReadRegister(uint8_t reg);
+	void m_ReadMultiByteRegister(uint8_t reg, uint8_t* bytes, int size);
+
 	void m_WriteRegister(uint8_t reg, uint8_t value);
+	void m_WriteMultiByteRegister(uint8_t reg, uint8_t* bytes, int size);
 };
 
 

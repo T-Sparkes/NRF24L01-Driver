@@ -56,4 +56,9 @@ public:
     {
         Serial.print(val);
     }
+
+    void printHex(int val) override
+    {
+        Serial.print(val, HEX);
+    }
 };
