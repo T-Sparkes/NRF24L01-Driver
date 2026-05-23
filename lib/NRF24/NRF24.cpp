@@ -14,7 +14,7 @@ NRF24_Driver_Base::~NRF24_Driver_Base()
 void NRF24_Driver_Base::init()
 {
     setCE(0);
-    setCSN(1);
+    setCSN(1); // Deselect chip
     softReset();
     flushRx();
     flushTx();

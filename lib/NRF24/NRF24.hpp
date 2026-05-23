@@ -54,6 +54,7 @@ private:
 	friend void test_m_ReadRegister();
     friend void test_m_WriteRegister();
 	friend void test_m_ReadMultiByteRegister();
+	friend void test_m_WriteMultiByteRegister();
 	friend void test_transmit();
 };
 

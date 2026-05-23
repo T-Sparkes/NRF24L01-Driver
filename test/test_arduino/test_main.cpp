@@ -10,28 +10,48 @@ NRF24_Arduino radio(NRF24_CSN_PIN, NRF24_CE_PIN);
 
 // TODO: Add setup and tear down so each test starts and ends in a known state
 
+void setUp(void) 
+{
+    // set stuff up here
+	radio.init();
+}
+
+void tearDown(void) 
+{
+    // clean stuff up here
+	radio.softReset();
+}
+
 void test_m_ReadRegister()
 {
 	uint8_t config = radio.m_ReadRegister(CONFIG);
-	TEST_ASSERT_EQUAL(CONFIG_RESET_VAL, config);
+	TEST_ASSERT_EQUAL_HEX8(CONFIG_RESET_VAL, config);
 }
 
 void test_m_ReadMultiByteRegister()
 {
+	uint8_t expected[] = {0xC2, 0xC2, 0xC2, 0xC2, 0xC2}; // Reset Address is 0xC2C2C2C2C2
 	uint8_t bytes[5];
+
 	radio.m_ReadMultiByteRegister(RX_ADDR_P1, bytes, 5);
-	
-	for (int i = 0; i < 5; i++)
-	{
-		TEST_ASSERT_EQUAL(0xC2, bytes[i]); //Reset Address is 0xC2C2C2C2C2
-	}  
+	TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, bytes, 5); 
 }
 
 void test_m_WriteRegister()
 {
 	radio.m_WriteRegister(RX_ADDR_P2, 0xAA);
 	uint8_t addr = radio.m_ReadRegister(RX_ADDR_P2);
-	TEST_ASSERT_EQUAL(0xAA, addr);
+	TEST_ASSERT_EQUAL_HEX8(0xAA, addr);
+}
+
+void test_m_WriteMultiByteRegister()
+{
+	uint8_t expected[] = {0xAA, 0xAA, 0xAA, 0xAA, 0xAA}; // Reset Address is 0xC2C2C2C2C2
+	uint8_t bytes[5];
+
+	radio.m_WriteMultiByteRegister(RX_ADDR_P1, expected, 5);
+	radio.m_ReadMultiByteRegister(RX_ADDR_P1, bytes, 5);
+	TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, bytes, 5); 
 }
 
 void test_writePayload()
@@ -40,6 +60,7 @@ void test_writePayload()
 
 	TEST_ASSERT_FALSE(radio.txFull());
 
+	// FIFO holds 3 payloads, max payload size 32 bytes
 	radio.writePayload(&byte, sizeof(byte));
 	radio.writePayload(&byte, sizeof(byte));
 	radio.writePayload(&byte, sizeof(byte));
@@ -47,7 +68,6 @@ void test_writePayload()
 	TEST_ASSERT_TRUE(radio.txFull());
 
 	radio.flushTx();
-
 	TEST_ASSERT_FALSE(radio.txFull());
 }
 
@@ -64,27 +84,17 @@ void test_transmit()
 
 void setup()
 {
-	delay(2000);
-
+	delay(1000);
 	SPI.begin();
-	radio.init();
 
 	UNITY_BEGIN(); 
 
 	RUN_TEST(test_m_ReadRegister);
-	delay(100);
-
 	RUN_TEST(test_m_ReadMultiByteRegister);
-	delay(100);
-
 	RUN_TEST(test_m_WriteRegister);
-	delay(100);
-
+	RUN_TEST(test_m_WriteMultiByteRegister);
 	RUN_TEST(test_writePayload);
-	delay(100);
-
 	RUN_TEST(test_transmit);
-	delay(100);
 }
 
 void loop()
