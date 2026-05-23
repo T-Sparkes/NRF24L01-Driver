@@ -55,7 +55,7 @@ void loop()
 	// Transmit continously for 4ms, then rest for a few micros;
 	unsigned long startTime = micros();
 	radio.setCE(1); // continues transmission
-	while (micros() - startTime < 4e3)
+	while (micros() - startTime < 4e3) // becomes unstable after ~ 4ms
 	{
 		testPacket test;
 		test.id = counter++;
@@ -63,7 +63,6 @@ void loop()
 		radio.writePayload((uint8_t*)&test, sizeof(test));
 	}
 	radio.setCE(0); // Stop transmission
-	//delayMicroseconds(100); // Rest for a few micros
 }
 #endif
 

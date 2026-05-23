@@ -180,7 +180,7 @@ uint8_t NRF24_Driver_Base::m_ReadRegister(uint8_t reg)
     SPI_BeginTransaction();
     setCSN(0); // Active Low
 
-    SPI_Transfer(R_REGISTER | reg);
+    SPI_Transfer(R_REGISTER | reg); // SPI command or'ed with target register address
     uint8_t data = SPI_Transfer(0x00);
 
     setCSN(1); 
@@ -194,7 +194,7 @@ void NRF24_Driver_Base::m_ReadMultiByteRegister(uint8_t reg, uint8_t *bytes, int
     SPI_BeginTransaction();
     setCSN(0); // Active Low
 
-    SPI_Transfer(R_REGISTER | reg);
+    SPI_Transfer(R_REGISTER | reg); // SPI command or'ed with target register address
 
     for (int i = 0; i < size; i++)
     {
@@ -211,7 +211,7 @@ void NRF24_Driver_Base::m_WriteRegister(uint8_t reg, uint8_t value)
     SPI_BeginTransaction();
     setCSN(0); // Active Low
 
-    SPI_Transfer(W_REGISTER | reg);
+    SPI_Transfer(W_REGISTER | reg); // SPI command or'ed with target register address
     SPI_Transfer(value);
 
     setCSN(1);
@@ -223,7 +223,7 @@ void NRF24_Driver_Base::m_WriteMultiByteRegister(uint8_t reg, uint8_t *bytes, in
     SPI_BeginTransaction();
     setCSN(0); // Active Low
 
-    SPI_Transfer(W_REGISTER | reg);
+    SPI_Transfer(W_REGISTER | reg); // SPI command or'ed with target register address
 
     for (int i = 0; i < size; i++)
     {

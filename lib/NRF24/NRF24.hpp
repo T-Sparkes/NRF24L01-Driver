@@ -8,6 +8,7 @@ public:
 	~NRF24_Driver_Base();
 
 	void init();
+	void softReset();
 
 	void powerOn();
 	void setPayloadWidth();
@@ -22,7 +23,6 @@ public:
 	void flushTx();
 	void flushRx();
 
-	void softReset();
 	void printPrettyConfig();
 	void printPrettyStatus();
 	void printPrettyRxAdresses();
@@ -42,13 +42,19 @@ protected:
 	virtual void print(const char* chars) = 0;
 	virtual void print(int val) = 0;
 	virtual void printHex(int val) = 0; 
-	
-public: // Will be private
+
+private:
 	uint8_t m_ReadRegister(uint8_t reg);
 	void m_ReadMultiByteRegister(uint8_t reg, uint8_t* bytes, int size);
 
 	void m_WriteRegister(uint8_t reg, uint8_t value);
 	void m_WriteMultiByteRegister(uint8_t reg, uint8_t* bytes, int size);
+
+	// TODO: I think this is stupid, will find a better way
+	friend void test_m_ReadRegister();
+    friend void test_m_WriteRegister();
+	friend void test_m_ReadMultiByteRegister();
+	friend void test_transmit();
 };
 
 

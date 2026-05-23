@@ -1,9 +1,16 @@
 #pragma once
 
-#include <stdint.h>
-#define bitRead(value,bit) (((value) >> (bit)) & 0x01)
-#define bitSet(value,bit) ((value) |= (1UL << (bit)))
+#ifndef bitRead
+#define bitRead(value, bit) (((value) >> (bit)) & 1UL)
+#endif
+
+#ifndef bitSet
+#define bitSet(value, bit) ((value) |= (1UL << (bit)))
+#endif
+
+#ifndef bitClear
 #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
+#endif
 
 enum SPI_COMMANDS
 {
