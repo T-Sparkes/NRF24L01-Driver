@@ -1,6 +1,41 @@
 #pragma once
 #include <stdint.h>
 
+/*
+TODO: 
+- Pipe configuration
+ 	- radio.rxEnablePipe(RX_PIPE);
+ 	- radio.rxConfigurePipe(RX_PIPE, Address, true, true)
+
+- Testing for address functions
+	- test_rxSetPipeAddress() etc.
+*/
+
+enum RxPipe
+{
+	RX_P0,
+	RX_P1,
+	RX_P2,
+	RX_P3,
+	RX_P4,
+	RX_P5,
+};
+
+/**  
+* RX/TX Address field width. 
+* '00' - Illegal
+* '01' - 3 bytes 
+* '10' - 4 bytes 
+* '11' – 5 bytes
+* LSByte is used if address width is below 5 bytes 
+**/
+enum AddressWidth
+{
+    Width3Bytes = 0b01,
+    Width4Bytes = 0b10,
+    Width5Bytes = 0b11
+};
+
 class NRF24_Driver_Base
 {
 public:
@@ -11,6 +46,16 @@ public:
 	void softReset();
 
 	void powerOn();
+
+	void rxEnablePipe(RxPipe pipe);
+
+	void setAddressWidth(AddressWidth width);
+	AddressWidth getAddressWidth();
+
+	void rxSetPipeAddress(RxPipe pipe, uint8_t* address, int size);
+	void rxSetPipeAddress(RxPipe pipe, uint64_t address);
+	void txSetAddress(uint64_t address);
+
 	void setPayloadWidth();
 	void SetModeReceive();
 	void writePayload(uint8_t* data, int size);
@@ -31,6 +76,8 @@ protected:
 	int CSN_PIN;
 	int CE_PIN;
 
+	// virtual functions to be implimented by the target platform
+
 	virtual void SPI_BeginTransaction() = 0;
 	virtual void SPI_EndTransaction() = 0;
 	virtual uint8_t SPI_Transfer(uint8_t data) = 0;
@@ -43,7 +90,7 @@ protected:
 	virtual void print(int val) = 0;
 	virtual void printHex(int val) = 0; 
 
-private:
+public:
 	uint8_t m_ReadRegister(uint8_t reg);
 	void m_ReadMultiByteRegister(uint8_t reg, uint8_t* bytes, int size);
 

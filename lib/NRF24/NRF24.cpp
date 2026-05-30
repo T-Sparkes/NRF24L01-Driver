@@ -33,6 +33,88 @@ void NRF24_Driver_Base::setPayloadWidth()
 
 }
 
+void NRF24_Driver_Base::setAddressWidth(AddressWidth width)
+{
+    if (width < 0x01 || width > 0x03) 
+        return;
+    
+    m_WriteRegister(SETUP_AW, width);
+}
+
+AddressWidth NRF24_Driver_Base::getAddressWidth()
+{
+    return static_cast<AddressWidth>(m_ReadRegister(SETUP_AW)); // Not sure about this
+}
+
+void NRF24_Driver_Base::rxSetPipeAddress(RxPipe pipe, uint8_t* address, int size)
+{
+    uint8_t regAddress = RX_ADDR_P0;
+    regAddress += pipe;
+
+    if (regAddress > RX_ADDR_P5 || regAddress < RX_ADDR_P0) 
+        return; // Ensure valid register address
+
+    else if (regAddress >= RX_ADDR_P2) // P2 to P5 -> Only LSB. MSBytes are equal to RX_ADDR_P1
+        size = 1;
+
+    m_WriteMultiByteRegister(regAddress, address, size);
+}
+
+
+/// @brief 
+/// @param pipe 
+/// @param address 
+void NRF24_Driver_Base::rxSetPipeAddress(RxPipe pipe, uint64_t address)
+{
+    uint8_t regAddress = RX_ADDR_P0 + pipe;
+    uint8_t buffer[5];
+    int size = 5;
+
+    if (regAddress < RX_ADDR_P0 || regAddress > RX_ADDR_P5) 
+        return; // Ensure valid register address
+
+    if (regAddress >= RX_ADDR_P2) // P2 to P5 -> Only LSB. MSBytes are equal to RX_ADDR_P1
+    {
+        size = 1;
+        buffer[0] = static_cast<uint8_t>(address & 0xFF);
+    } 
+    else 
+    {
+        size = 5;
+        for (int i = 0; i < size; i++) // Shift the 5 LSBs into a buffer
+        {
+            buffer[i] = static_cast<uint8_t>((address >> (i * 8)) & 0xFF);
+        }
+    }
+
+    m_WriteMultiByteRegister(regAddress, buffer, size);
+}
+
+/// @brief Set RX_ADDR_P0 equal to this address to handle 
+/// automatic acknowledge if this is a PTX device with 
+/// Enhanced ShockBurst™ enabled
+/// @param address Only the 5 LSBytes are used
+void NRF24_Driver_Base::txSetAddress(uint64_t address)
+{
+    uint8_t buffer[5];
+    int size = 5;
+
+    for (int i = 0; i < 5; i++) // Shift the 5 LSBs into a buffer
+    {
+        buffer[i] = static_cast<uint8_t>((address >> (i * 8)) & 0xFF);
+    }
+    size = 5;
+
+    m_WriteMultiByteRegister(TX_ADDR, buffer, size);
+}
+
+void NRF24_Driver_Base::rxEnablePipe(RxPipe pipe)
+{
+    uint8_t pipeEnable = m_ReadRegister(EN_RXADDR);
+    bitSet(pipeEnable, pipe); // Pipe number maps to the bit, P0 - bit 0, P5 - bit 5 etc.
+    m_WriteRegister(EN_RXADDR, pipeEnable);
+}
+
 void NRF24_Driver_Base::SetModeReceive()
 {
     uint8_t config = m_ReadRegister(CONFIG);
@@ -103,7 +185,7 @@ bool NRF24_Driver_Base::rxDataReady()
     return dataReady;
 }
 
-bool NRF24_Driver_Base::txTransmit()
+bool NRF24_Driver_Base::txTransmit() // This needs to be improved
 {
     // Send pending packets
 	setCE(1);

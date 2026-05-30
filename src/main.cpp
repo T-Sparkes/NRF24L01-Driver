@@ -21,21 +21,22 @@ struct testPacket
 void setup() 
 {
 	SPI.begin();
-	Serial.begin(250000);
+	Serial.begin(115200);
 	delay(1000);
 
 	// TX SETUP
 	radio.init();
-	//radio.printPrettyConfig();
+	radio.printPrettyConfig();
 	radio.printPrettyRxAdresses();
 
 	radio.powerOn();
-	radio.m_WriteRegister(EN_AA, 0x00); // Disable auto ack
+	radio.m_WriteRegister(EN_AA, 0x00); // Disable auto ack (TEMP)
 
-	uint8_t address[] = {0xEE, 0xDD, 0xCC, 0xBB, 0xAA};
-	radio.m_WriteMultiByteRegister(RX_ADDR_P0, address, 5); // Set RX address for pipe 0
-	radio.m_WriteMultiByteRegister(TX_ADDR, address, 5); // Set TX address, must be the same as RX address for pipe 0
-
+	uint64_t address = 0xAABBCCDDEE;
+	radio.setAddressWidth(Width5Bytes);
+	radio.rxSetPipeAddress(RX_P0, address); // Set RX address for pipe 0
+	radio.txSetAddress(address); // Set TX address, must be the same as RX address for pipe 0 to use ACK
+	radio.rxSetPipeAddress(RX_P1, 0xFFFFFFFFC2);
 	radio.printPrettyRxAdresses();
 }
 
@@ -53,6 +54,7 @@ void loop()
 	//radio.txTransmit();
 	
 	// Transmit continously for 4ms, then rest for a few micros;
+	/*
 	unsigned long startTime = micros();
 	radio.setCE(1); // continues transmission
 	while (micros() - startTime < 4e3) // becomes unstable after ~ 4ms
@@ -63,6 +65,7 @@ void loop()
 		radio.writePayload((uint8_t*)&test, sizeof(test));
 	}
 	radio.setCE(0); // Stop transmission
+	*/
 }
 #endif
 
