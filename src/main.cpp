@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-#include "NRF24.hpp"
+//#include "NRF24.hpp"
 #include "NRF24_Arduino.hpp"
 #include "NRF24_Utility.hpp"
 
@@ -30,30 +30,27 @@ void setup()
 	radio.printPrettyRxAdresses();
 
 	radio.powerOn();
-	radio.m_WriteRegister(EN_AA, 0x00); // Disable auto ack (TEMP)
+	radio.setAddressWidth(NRF24_Arduino::Width5Bytes);
+	radio.rxDisableAck(NRF24_Arduino::P0);
+	
+	radio.txSetAddress(0xAABBCCDDEE); // Set TX address, must be the same as RX address for pipe 0 to use ACK
+	radio.rxSetPipeAddress(NRF24_Arduino::P0, 0xAABBCCDDEE);
 
-	uint64_t address = 0xAABBCCDDEE;
-	radio.setAddressWidth(Width5Bytes);
-	radio.rxSetPipeAddress(RX_P0, address); // Set RX address for pipe 0
-	radio.txSetAddress(address); // Set TX address, must be the same as RX address for pipe 0 to use ACK
-	radio.rxSetPipeAddress(RX_P1, 0xFFFFFFFFC2);
 	radio.printPrettyRxAdresses();
 }
 
 void loop()
 {
 	static uint64_t counter = 0;
-	//radio.printPrettyConfig();
-	//radio.printPrettyStatus();
 
 	testPacket test;
 	test.id = counter++;
 	strcpy(test.data, "Test Data");
 
 	radio.writePayload((uint8_t*)&test, sizeof(test));
-	//radio.txTransmit();
+	radio.txTransmit();
 	
-	// Transmit continously for 4ms, then rest for a few micros;
+	// Transmit continously for 4ms, then rest for a few micros (EXPERIMENT);
 	/*
 	unsigned long startTime = micros();
 	radio.setCE(1); // continues transmission
@@ -74,19 +71,20 @@ void loop()
 void setup() 
 {
 	SPI.begin();
-	Serial.begin(250000);
+	Serial.begin(115200);
 	delay(1000);
 
 	radio.init();
 
-	uint8_t address[] = {0xEE, 0xDD, 0xCC, 0xBB, 0xAA};
-	radio.m_WriteMultiByteRegister(RX_ADDR_P0, address, 5); // Set RX address for pipe 0
-
-	radio.m_WriteRegister(EN_AA, 0x00); // Disable auto ack
-	radio.SetModeReceive(); // Set mode 
-	radio.m_WriteRegister(RX_PW_P0, sizeof(testPacket)); // Set payload size
-	
 	radio.powerOn();
+	radio.setAddressWidth(NRF24_Arduino::Width5Bytes);
+	radio.rxDisableAck(NRF24_Arduino::P0);
+
+	radio.rxSetPipeAddress(NRF24_Arduino::P0, 0xAABBCCDDEE);
+
+	radio.SetModeReceive(); // Set mode 
+	radio.m_WriteRegister(RX_PW_P0, sizeof(testPacket)); // Set payload size (TEMP)
+	
 	radio.setCE(1); // Enable Receiving 
 
 	radio.printPrettyConfig();
@@ -98,15 +96,12 @@ void loop()
 {
 	static unsigned long bytesReceived = 0;
 	static unsigned long startTime = millis();
-	//radio.printPrettyStatus();
-	//radio.printPrettyConfig();
-	//delay(1000);
 
 	// Calculate bytes per second
 	while (radio.rxDataReady())
 	{
 		testPacket packet;
-		radio.readPayload((uint8_t*)&packet, sizeof(testPacket));
+		radio.readPayload(reinterpret_cast<uint8_t*>(&packet), sizeof(testPacket));
 
 		//Serial.print("Received: ");
 		//Serial.print(packet.data);
@@ -122,7 +117,7 @@ void loop()
 		float Bps = (bytesReceived) / (elapsedTime / 1000.0);
 		Serial.print("Data Rate: ");
 		Serial.print(Bps / 1000.0);
-		Serial.println(" kB/s");..
+		Serial.println(" kB/s");
 		bytesReceived = 0;
 		startTime = millis();
 	}

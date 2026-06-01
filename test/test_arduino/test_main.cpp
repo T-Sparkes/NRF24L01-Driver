@@ -78,23 +78,46 @@ void test_transmit()
 	radio.writePayload(&byte, sizeof(byte));
 	TEST_ASSERT_FALSE(radio.txTransmit()); // Auto ack on, TX Fails
 
-	radio.m_WriteRegister(EN_AA, 0x00); // Disable auto ack
+	radio.rxDisableAck(NRF24_Arduino::P0);
 	TEST_ASSERT_TRUE(radio.txTransmit()); // No ack TX Succeds
+}
+
+void test_SetAddress()
+{
+	uint64_t rxAddress = 0xAABBCCDDEE;
+	uint64_t txAddress = 0xEEDDCCBBAA;
+
+	uint8_t expectedRxBytes[] = {0xEE, 0xDD, 0xCC, 0xBB, 0xAA}; // Bytes will be read reversed (LSB First)
+	uint8_t expectedTxBytes[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE}; // Bytes will be read reversed (LSB First)
+	uint8_t bytes[5];
+
+	radio.txSetAddress(txAddress);
+	radio.rxSetPipeAddress(NRF24_Arduino::P0, rxAddress);
+
+	radio.m_ReadMultiByteRegister(RX_ADDR_P0, bytes, 5);
+	TEST_ASSERT_EQUAL_HEX8_ARRAY(expectedRxBytes, bytes, 5);
+	
+	radio.m_ReadMultiByteRegister(TX_ADDR, bytes, 5);
+	TEST_ASSERT_EQUAL_HEX8_ARRAY(expectedTxBytes, bytes, 5); 
 }
 
 void setup()
 {
-	delay(1000);
+	delay(1000); // Delay or it wont work
 	SPI.begin();
 
 	UNITY_BEGIN(); 
 
+	// Private Functions
 	RUN_TEST(test_m_ReadRegister);
 	RUN_TEST(test_m_ReadMultiByteRegister);
 	RUN_TEST(test_m_WriteRegister);
 	RUN_TEST(test_m_WriteMultiByteRegister);
+
+	// Public API
 	RUN_TEST(test_writePayload);
 	RUN_TEST(test_transmit);
+	RUN_TEST(test_SetAddress);
 }
 
 void loop()

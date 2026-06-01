@@ -11,34 +11,36 @@ TODO:
 	- test_rxSetPipeAddress() etc.
 */
 
-enum RxPipe
-{
-	RX_P0,
-	RX_P1,
-	RX_P2,
-	RX_P3,
-	RX_P4,
-	RX_P5,
-};
 
-/**  
-* RX/TX Address field width. 
-* '00' - Illegal
-* '01' - 3 bytes 
-* '10' - 4 bytes 
-* '11' – 5 bytes
-* LSByte is used if address width is below 5 bytes 
-**/
-enum AddressWidth
-{
-    Width3Bytes = 0b01,
-    Width4Bytes = 0b10,
-    Width5Bytes = 0b11
-};
 
 class NRF24_Driver_Base
 {
 public:
+	enum DataPipe
+	{
+		P0,
+		P1,
+		P2,
+		P3,
+		P4,
+		P5,
+	};
+
+	/**  
+	* RX/TX Address field width. 
+	* '00' - Illegal
+	* '01' - 3 bytes 
+	* '10' - 4 bytes 
+	* '11' – 5 bytes
+	* LSByte is used if address width is below 5 bytes 
+	**/
+	enum AddressWidth
+	{
+	    Width3Bytes = 0b01,
+	    Width4Bytes = 0b10,
+	    Width5Bytes = 0b11
+	};
+
 	NRF24_Driver_Base();
 	~NRF24_Driver_Base();
 
@@ -47,13 +49,17 @@ public:
 
 	void powerOn();
 
-	void rxEnablePipe(RxPipe pipe);
+	void rxEnablePipe(DataPipe pipe);
+	void rxDisablePipe(DataPipe pipe);
+	
+	void rxEnableAck(DataPipe pipe);
+	void rxDisableAck(DataPipe pipe);
 
 	void setAddressWidth(AddressWidth width);
 	AddressWidth getAddressWidth();
 
-	void rxSetPipeAddress(RxPipe pipe, uint8_t* address, int size);
-	void rxSetPipeAddress(RxPipe pipe, uint64_t address);
+	void rxSetPipeAddress(DataPipe pipe, uint8_t* address, int size);
+	void rxSetPipeAddress(DataPipe pipe, uint64_t address);
 	void txSetAddress(uint64_t address);
 
 	void setPayloadWidth();
@@ -104,6 +110,5 @@ public:
 	friend void test_m_WriteMultiByteRegister();
 	friend void test_transmit();
 };
-
 
 

@@ -41,12 +41,12 @@ void NRF24_Driver_Base::setAddressWidth(AddressWidth width)
     m_WriteRegister(SETUP_AW, width);
 }
 
-AddressWidth NRF24_Driver_Base::getAddressWidth()
+NRF24_Driver_Base::AddressWidth NRF24_Driver_Base::getAddressWidth()
 {
     return static_cast<AddressWidth>(m_ReadRegister(SETUP_AW)); // Not sure about this
 }
 
-void NRF24_Driver_Base::rxSetPipeAddress(RxPipe pipe, uint8_t* address, int size)
+void NRF24_Driver_Base::rxSetPipeAddress(DataPipe pipe, uint8_t* address, int size)
 {
     uint8_t regAddress = RX_ADDR_P0;
     regAddress += pipe;
@@ -61,10 +61,12 @@ void NRF24_Driver_Base::rxSetPipeAddress(RxPipe pipe, uint8_t* address, int size
 }
 
 
-/// @brief 
+/// @brief Receive address for data pipe.  5 Bytes maximum 
+/// length. (LSByte is written first. Write the number of bytes defined by SETUP_AW)
+/// For Pipes 2 - 5 Only LSB. MSBytes are equal to RX_ADDR_P1[39:8]
 /// @param pipe 
 /// @param address 
-void NRF24_Driver_Base::rxSetPipeAddress(RxPipe pipe, uint64_t address)
+void NRF24_Driver_Base::rxSetPipeAddress(DataPipe pipe, uint64_t address)
 {
     uint8_t regAddress = RX_ADDR_P0 + pipe;
     uint8_t buffer[5];
@@ -108,11 +110,32 @@ void NRF24_Driver_Base::txSetAddress(uint64_t address)
     m_WriteMultiByteRegister(TX_ADDR, buffer, size);
 }
 
-void NRF24_Driver_Base::rxEnablePipe(RxPipe pipe)
+void NRF24_Driver_Base::rxEnablePipe(DataPipe pipe)
 {
     uint8_t pipeEnable = m_ReadRegister(EN_RXADDR);
     bitSet(pipeEnable, pipe); // Pipe number maps to the bit, P0 - bit 0, P5 - bit 5 etc.
     m_WriteRegister(EN_RXADDR, pipeEnable);
+}
+
+void NRF24_Driver_Base::rxDisablePipe(DataPipe pipe)
+{
+    uint8_t pipeEnable = m_ReadRegister(EN_RXADDR);
+    bitClear(pipeEnable, pipe); // Pipe number maps to the bit, P0 - bit 0, P5 - bit 5 etc.
+    m_WriteRegister(EN_RXADDR, pipeEnable);
+}
+
+void NRF24_Driver_Base::rxEnableAck(DataPipe pipe)
+{
+    uint8_t pipeAckEnable = m_ReadRegister(EN_AA);
+    bitSet(pipeAckEnable, pipe); // Pipe number maps to the bit, P0 - bit 0, P5 - bit 5 etc.
+    m_WriteRegister(EN_AA, pipeAckEnable);
+}
+
+void NRF24_Driver_Base::rxDisableAck(DataPipe pipe)
+{
+    uint8_t pipeAckEnable = m_ReadRegister(EN_AA);
+    bitClear(pipeAckEnable, pipe); // Pipe number maps to the bit, P0 - bit 0, P5 - bit 5 etc.
+    m_WriteRegister(EN_AA, pipeAckEnable);
 }
 
 void NRF24_Driver_Base::SetModeReceive()
@@ -243,8 +266,18 @@ void NRF24_Driver_Base::softReset()
     m_WriteRegister(RF_SETUP,   RF_SETUP_RESET_VAL);
     m_WriteRegister(STATUS,     STATUS_RESET_VAL);
     m_WriteRegister(RPD,        RPD_RESET_VAL);
+    
+    // Reset all Pipe Addresses
+    // Multi Byte Addresses
+    txSetAddress(TX_ADDR_RESET_VAL);
+    rxSetPipeAddress(P0, RX_ADDR_P0_RESET_VAL);
+    rxSetPipeAddress(P1, RX_ADDR_P1_RESET_VAL);
 
-    // TODO: RESET RX_ADDR_P0 - RX_ADDR_P5 & TX_ADDR
+    // Single Byte addresses
+    m_WriteRegister(RX_ADDR_P2, RX_ADDR_P2_RESET_VAL);
+    m_WriteRegister(RX_ADDR_P3, RX_ADDR_P3_RESET_VAL);
+    m_WriteRegister(RX_ADDR_P4, RX_ADDR_P4_RESET_VAL);
+    m_WriteRegister(RX_ADDR_P5, RX_ADDR_P5_RESET_VAL);
 
     // Reset RX_PW_P0 - RX_PW_P5
     for (int i = 0; i < 6; i++)
