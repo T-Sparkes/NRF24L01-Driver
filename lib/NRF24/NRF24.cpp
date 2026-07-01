@@ -1,17 +1,17 @@
 #include "NRF24.hpp"
 #include "NRF24_Utility.hpp"
 
-NRF24_Driver_Base::NRF24_Driver_Base(/* args */)
+NRF24::Driver_Base::Driver_Base(/* args */)
 {
 
 }
 
-NRF24_Driver_Base::~NRF24_Driver_Base()
+NRF24::Driver_Base::~Driver_Base()
 {
 
 }
 
-void NRF24_Driver_Base::init()
+void NRF24::Driver_Base::init()
 {
     setCE(0);
     setCSN(1); // Deselect chip
@@ -20,7 +20,7 @@ void NRF24_Driver_Base::init()
     flushTx();
 }
 
-void NRF24_Driver_Base::powerOn()
+void NRF24::Driver_Base::powerOn()
 {
     uint8_t config = m_ReadRegister(CONFIG);
     bitSet(config, CONFIG_PWR_UP);
@@ -28,12 +28,12 @@ void NRF24_Driver_Base::powerOn()
     delayMicro(5e3); // 5ms
 }
 
-void NRF24_Driver_Base::setPayloadWidth()
+void NRF24::Driver_Base::setPayloadWidth()
 {
 
 }
 
-void NRF24_Driver_Base::setAddressWidth(AddressWidth width)
+void NRF24::Driver_Base::setAddressWidth(AddressWidth width)
 {
     if (width < 0x01 || width > 0x03) 
         return;
@@ -41,12 +41,12 @@ void NRF24_Driver_Base::setAddressWidth(AddressWidth width)
     m_WriteRegister(SETUP_AW, width);
 }
 
-NRF24_Driver_Base::AddressWidth NRF24_Driver_Base::getAddressWidth()
+NRF24::AddressWidth NRF24::Driver_Base::getAddressWidth()
 {
     return static_cast<AddressWidth>(m_ReadRegister(SETUP_AW)); // Not sure about this
 }
 
-void NRF24_Driver_Base::rxSetPipeAddress(DataPipe pipe, uint8_t* address, int size)
+void NRF24::Driver_Base::rxSetPipeAddress(DataPipe pipe, uint8_t* address, int size)
 {
     uint8_t regAddress = RX_ADDR_P0;
     regAddress += pipe;
@@ -66,7 +66,7 @@ void NRF24_Driver_Base::rxSetPipeAddress(DataPipe pipe, uint8_t* address, int si
 /// For Pipes 2 - 5 Only LSB. MSBytes are equal to RX_ADDR_P1[39:8]
 /// @param pipe 
 /// @param address 
-void NRF24_Driver_Base::rxSetPipeAddress(DataPipe pipe, uint64_t address)
+void NRF24::Driver_Base::rxSetPipeAddress(DataPipe pipe, uint64_t address)
 {
     uint8_t regAddress = RX_ADDR_P0 + pipe;
     uint8_t buffer[5];
@@ -96,7 +96,7 @@ void NRF24_Driver_Base::rxSetPipeAddress(DataPipe pipe, uint64_t address)
 /// automatic acknowledge if this is a PTX device with 
 /// Enhanced ShockBurst™ enabled
 /// @param address Only the 5 LSBytes are used
-void NRF24_Driver_Base::txSetAddress(uint64_t address)
+void NRF24::Driver_Base::txSetAddress(uint64_t address)
 {
     uint8_t buffer[5];
     int size = 5;
@@ -110,35 +110,35 @@ void NRF24_Driver_Base::txSetAddress(uint64_t address)
     m_WriteMultiByteRegister(TX_ADDR, buffer, size);
 }
 
-void NRF24_Driver_Base::rxEnablePipe(DataPipe pipe)
+void NRF24::Driver_Base::rxEnablePipe(DataPipe pipe)
 {
     uint8_t pipeEnable = m_ReadRegister(EN_RXADDR);
     bitSet(pipeEnable, pipe); // Pipe number maps to the bit, P0 - bit 0, P5 - bit 5 etc.
     m_WriteRegister(EN_RXADDR, pipeEnable);
 }
 
-void NRF24_Driver_Base::rxDisablePipe(DataPipe pipe)
+void NRF24::Driver_Base::rxDisablePipe(DataPipe pipe)
 {
     uint8_t pipeEnable = m_ReadRegister(EN_RXADDR);
     bitClear(pipeEnable, pipe); // Pipe number maps to the bit, P0 - bit 0, P5 - bit 5 etc.
     m_WriteRegister(EN_RXADDR, pipeEnable);
 }
 
-void NRF24_Driver_Base::rxEnableAck(DataPipe pipe)
+void NRF24::Driver_Base::rxEnableAck(DataPipe pipe)
 {
     uint8_t pipeAckEnable = m_ReadRegister(EN_AA);
     bitSet(pipeAckEnable, pipe); // Pipe number maps to the bit, P0 - bit 0, P5 - bit 5 etc.
     m_WriteRegister(EN_AA, pipeAckEnable);
 }
 
-void NRF24_Driver_Base::rxDisableAck(DataPipe pipe)
+void NRF24::Driver_Base::rxDisableAck(DataPipe pipe)
 {
     uint8_t pipeAckEnable = m_ReadRegister(EN_AA);
     bitClear(pipeAckEnable, pipe); // Pipe number maps to the bit, P0 - bit 0, P5 - bit 5 etc.
     m_WriteRegister(EN_AA, pipeAckEnable);
 }
 
-void NRF24_Driver_Base::SetModeReceive()
+void NRF24::Driver_Base::SetModeReceive()
 {
     uint8_t config = m_ReadRegister(CONFIG);
     bitSet(config, CONFIG_PRIM_RX);
@@ -146,7 +146,7 @@ void NRF24_Driver_Base::SetModeReceive()
 }
 
 // Writes a payload to the TX FIFO
-void NRF24_Driver_Base::writePayload(uint8_t* data, int size)
+void NRF24::Driver_Base::writePayload(uint8_t* data, int size)
 {
     SPI_BeginTransaction();
     setCSN(0); // Active Low
@@ -162,7 +162,7 @@ void NRF24_Driver_Base::writePayload(uint8_t* data, int size)
     SPI_EndTransaction();
 }
 
-void NRF24_Driver_Base::readPayload(uint8_t* data, int size)
+void NRF24::Driver_Base::readPayload(uint8_t* data, int size)
 {
     SPI_BeginTransaction();
     setCSN(0); // Active Low
@@ -187,28 +187,28 @@ void NRF24_Driver_Base::readPayload(uint8_t* data, int size)
 }
 
 // Checks if the TX FIFO is full (Stores up to 3 packets)
-bool NRF24_Driver_Base::txFull()
+bool NRF24::Driver_Base::txFull()
 {
     uint8_t status = m_ReadRegister(STATUS);
     if (bitRead(status, STATUS_TX_FULL)) return true;
     return false;
 }
 
-bool NRF24_Driver_Base::txEmpty()
+bool NRF24::Driver_Base::txEmpty()
 {
     uint8_t fifo_status = m_ReadRegister(FIFO_STATUS);
     if (bitRead(fifo_status, FIFO_STATUS_TX_EMPTY)) return true; 
     return false;
 }
 
-bool NRF24_Driver_Base::rxDataReady()
+bool NRF24::Driver_Base::rxDataReady()
 {
     uint8_t status = m_ReadRegister(STATUS);
     bool dataReady = bitRead(status, STATUS_RX_DR);
     return dataReady;
 }
 
-bool NRF24_Driver_Base::txTransmit() // This needs to be improved
+bool NRF24::Driver_Base::txTransmit() // This needs to be improved
 {
     // Send pending packets
 	setCE(1);
@@ -233,7 +233,7 @@ bool NRF24_Driver_Base::txTransmit() // This needs to be improved
 	}
 }
 
-void NRF24_Driver_Base::flushTx()
+void NRF24::Driver_Base::flushTx()
 {
     SPI_BeginTransaction();
     setCSN(0); // Active Low
@@ -244,7 +244,7 @@ void NRF24_Driver_Base::flushTx()
     SPI_EndTransaction();
 }
 
-void NRF24_Driver_Base::flushRx()
+void NRF24::Driver_Base::flushRx()
 {
     SPI_BeginTransaction();
     setCSN(0); // Active Low
@@ -255,7 +255,7 @@ void NRF24_Driver_Base::flushRx()
     SPI_EndTransaction();
 }
 
-void NRF24_Driver_Base::softReset()
+void NRF24::Driver_Base::softReset()
 {
     m_WriteRegister(CONFIG,     CONFIG_RESET_VAL);
     m_WriteRegister(EN_AA,      EN_AA_RESET_VAL);
@@ -290,7 +290,7 @@ void NRF24_Driver_Base::softReset()
 }
 
 // Returns the contents of a 1 byte register
-uint8_t NRF24_Driver_Base::m_ReadRegister(uint8_t reg)
+uint8_t NRF24::Driver_Base::m_ReadRegister(uint8_t reg)
 {
     SPI_BeginTransaction();
     setCSN(0); // Active Low
@@ -304,7 +304,7 @@ uint8_t NRF24_Driver_Base::m_ReadRegister(uint8_t reg)
   	return data;
 }
 
-void NRF24_Driver_Base::m_ReadMultiByteRegister(uint8_t reg, uint8_t *bytes, int size)
+void NRF24::Driver_Base::m_ReadMultiByteRegister(uint8_t reg, uint8_t *bytes, int size)
 {
     SPI_BeginTransaction();
     setCSN(0); // Active Low
@@ -321,7 +321,7 @@ void NRF24_Driver_Base::m_ReadMultiByteRegister(uint8_t reg, uint8_t *bytes, int
 }
 
 // Writes a 8bit value to a register
-void NRF24_Driver_Base::m_WriteRegister(uint8_t reg, uint8_t value)
+void NRF24::Driver_Base::m_WriteRegister(uint8_t reg, uint8_t value)
 {
     SPI_BeginTransaction();
     setCSN(0); // Active Low
@@ -333,7 +333,7 @@ void NRF24_Driver_Base::m_WriteRegister(uint8_t reg, uint8_t value)
     SPI_EndTransaction();
 }
 
-void NRF24_Driver_Base::m_WriteMultiByteRegister(uint8_t reg, uint8_t *bytes, int size)
+void NRF24::Driver_Base::m_WriteMultiByteRegister(uint8_t reg, uint8_t *bytes, int size)
 {
     SPI_BeginTransaction();
     setCSN(0); // Active Low
@@ -353,7 +353,7 @@ void NRF24_Driver_Base::m_WriteMultiByteRegister(uint8_t reg, uint8_t *bytes, in
 // Pretty print functions for debugging
 // =====================================
 
-void NRF24_Driver_Base::printPrettyConfig()
+void NRF24::Driver_Base::printPrettyConfig()
 {
     uint8_t config = m_ReadRegister(CONFIG);
 
@@ -388,7 +388,7 @@ void NRF24_Driver_Base::printPrettyConfig()
 	else print("Disabled\n");
 }
 
-void NRF24_Driver_Base::printPrettyStatus()
+void NRF24::Driver_Base::printPrettyStatus()
 {
     uint8_t status  = m_ReadRegister(STATUS);
   	print("==== STATUS ====\n");
@@ -428,7 +428,7 @@ void NRF24_Driver_Base::printPrettyStatus()
     print("\n");
 }
 
-void NRF24_Driver_Base::printPrettyRxAdresses()
+void NRF24::Driver_Base::printPrettyRxAdresses()
 {
     uint8_t rx_addr_p0[5];
     uint8_t rx_addr_p1[5];

@@ -12,10 +12,8 @@ TODO:
 */
 
 
-
-class NRF24_Driver_Base
+namespace NRF24
 {
-public:
 	enum DataPipe
 	{
 		P0,
@@ -41,74 +39,78 @@ public:
 	    Width5Bytes = 0b11
 	};
 
-	NRF24_Driver_Base();
-	~NRF24_Driver_Base();
+	class Driver_Base
+	{
+	public:
+		Driver_Base();
+		~Driver_Base();
 
-	void init();
-	void softReset();
+		void init();
+		void softReset();
 
-	void powerOn();
+		void powerOn();
 
-	void rxEnablePipe(DataPipe pipe);
-	void rxDisablePipe(DataPipe pipe);
-	
-	void rxEnableAck(DataPipe pipe);
-	void rxDisableAck(DataPipe pipe);
+		void rxEnablePipe(DataPipe pipe);
+		void rxDisablePipe(DataPipe pipe);
 
-	void setAddressWidth(AddressWidth width);
-	AddressWidth getAddressWidth();
+		void rxEnableAck(DataPipe pipe);
+		void rxDisableAck(DataPipe pipe);
 
-	void rxSetPipeAddress(DataPipe pipe, uint8_t* address, int size);
-	void rxSetPipeAddress(DataPipe pipe, uint64_t address);
-	void txSetAddress(uint64_t address);
+		void setAddressWidth(AddressWidth width);
+		AddressWidth getAddressWidth();
 
-	void setPayloadWidth();
-	void SetModeReceive();
-	void writePayload(uint8_t* data, int size);
-	void readPayload(uint8_t* data, int size);
-	bool txFull();
-	bool txEmpty();
-	bool rxDataReady();
-	bool txTransmit();
+		void rxSetPipeAddress(DataPipe pipe, uint8_t* address, int size);
+		void rxSetPipeAddress(DataPipe pipe, uint64_t address);
+		void txSetAddress(uint64_t address);
 
-	void flushTx();
-	void flushRx();
+		void setPayloadWidth();
+		void SetModeReceive();
+		void writePayload(uint8_t* data, int size);
+		void readPayload(uint8_t* data, int size);
+		bool txFull();
+		bool txEmpty();
+		bool rxDataReady();
+		bool txTransmit();
 
-	void printPrettyConfig();
-	void printPrettyStatus();
-	void printPrettyRxAdresses();
+		void flushTx();
+		void flushRx();
 
-protected:
-	int CSN_PIN;
-	int CE_PIN;
+		void printPrettyConfig();
+		void printPrettyStatus();
+		void printPrettyRxAdresses();
 
-	// virtual functions to be implimented by the target platform
+	protected:
+		int CSN_PIN;
+		int CE_PIN;
 
-	virtual void SPI_BeginTransaction() = 0;
-	virtual void SPI_EndTransaction() = 0;
-	virtual uint8_t SPI_Transfer(uint8_t data) = 0;
+		// virtual functions to be implimented by the target platform
 
-	virtual void setCSN(bool state) = 0;
-	virtual void setCE(bool state) = 0;
+		virtual void SPI_BeginTransaction() = 0;
+		virtual void SPI_EndTransaction() = 0;
+		virtual uint8_t SPI_Transfer(uint8_t data) = 0;
 
-	virtual void delayMicro(unsigned int microSeconds) = 0;
-	virtual void print(const char* chars) = 0;
-	virtual void print(int val) = 0;
-	virtual void printHex(int val) = 0; 
+		virtual void setCSN(bool state) = 0;
+		virtual void setCE(bool state) = 0;
 
-public:
-	uint8_t m_ReadRegister(uint8_t reg);
-	void m_ReadMultiByteRegister(uint8_t reg, uint8_t* bytes, int size);
+		virtual void delayMicro(unsigned int microSeconds) = 0;
+		virtual void print(const char* chars) = 0;
+		virtual void print(int val) = 0;
+		virtual void printHex(int val) = 0; 
 
-	void m_WriteRegister(uint8_t reg, uint8_t value);
-	void m_WriteMultiByteRegister(uint8_t reg, uint8_t* bytes, int size);
+	public:
+		uint8_t m_ReadRegister(uint8_t reg);
+		void m_ReadMultiByteRegister(uint8_t reg, uint8_t* bytes, int size);
 
-	// TODO: I think this is stupid, will find a better way
-	friend void test_m_ReadRegister();
-    friend void test_m_WriteRegister();
-	friend void test_m_ReadMultiByteRegister();
-	friend void test_m_WriteMultiByteRegister();
-	friend void test_transmit();
-};
+		void m_WriteRegister(uint8_t reg, uint8_t value);
+		void m_WriteMultiByteRegister(uint8_t reg, uint8_t* bytes, int size);
+
+		// TODO: I think this is stupid, will find a better way
+		friend void test_m_ReadRegister();
+	    friend void test_m_WriteRegister();
+		friend void test_m_ReadMultiByteRegister();
+		friend void test_m_WriteMultiByteRegister();
+		friend void test_transmit();
+	};
+}
 
 
